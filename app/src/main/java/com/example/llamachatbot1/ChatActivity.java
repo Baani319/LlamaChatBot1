@@ -24,6 +24,8 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import android.util.Log;
+
 public class ChatActivity extends AppCompatActivity {
 
     private EditText etMessage;
@@ -88,6 +90,7 @@ public class ChatActivity extends AppCompatActivity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.e("ChatActivity", "Network request failed: " + e.getMessage());
                 runOnUiThread(() -> {
                     addMessage("LlamaBot: [Error connecting to server]");
                     Toast.makeText(ChatActivity.this, "Network error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -97,17 +100,22 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
+                    String responseBody = response.body().string();
+                    Log.d("ChatActivity", "Server response: " + responseBody);
                     try {
-                        JSONObject responseJson = new JSONObject(response.body().string());
+                        JSONObject responseJson = new JSONObject(responseBody);
                         String botReply = responseJson.getString("response");
                         runOnUiThread(() -> addMessage("LlamaBot: " + botReply));
                     } catch (JSONException e) {
+                        Log.e("ChatActivity", "JSON parsing error: " + e.getMessage());
                         e.printStackTrace();
                     }
                 } else {
+                    Log.e("ChatActivity", "Server returned error code: " + response.code());
                     runOnUiThread(() -> addMessage("LlamaBot: [Unexpected server response]"));
                 }
             }
         });
     }
 }
+
